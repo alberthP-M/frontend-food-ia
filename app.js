@@ -7,6 +7,7 @@ const channelSelect = document.querySelector("#channel");
 const resultsGrid = document.querySelector("#results-grid");
 const resultsTitle = document.querySelector("#results-title");
 const resultMessage = document.querySelector("#result-message");
+const safetyNotice = document.querySelector("#safety-notice");
 const errorBox = document.querySelector("#error-box");
 const loading = document.querySelector("#loading");
 const serviceStatus = document.querySelector("#service-status");
@@ -81,13 +82,15 @@ function renderResults(items) {
 
 async function loadHealth() {
   try {
-    const response = await fetch(`${API_BASE}/api/health`);
+    const response = await fetch(`${API_BASE}/api/ready`);
     if (!response.ok) throw new Error("Backend no disponible");
     const data = await response.json();
-    serviceStatus.textContent = `Servicio activo · ${data.menu_items} platos`;
+    serviceStatus.classList.remove("offline");
+    serviceStatus.textContent = `Modelo listo · ${data.menu_items} platos`;
   } catch (error) {
-    serviceStatus.textContent = "Backend no disponible";
+    serviceStatus.textContent = "Preparando modelo…";
     serviceStatus.classList.add("offline");
+    window.setTimeout(loadHealth, 4000);
   }
 }
 
@@ -112,6 +115,8 @@ async function recommend() {
     if (!response.ok) throw new Error(data.detail || "No se pudo procesar la solicitud.");
     showConstraints(data.parsed_constraints);
     renderResults(data.recommendations);
+    safetyNotice.textContent = data.safety_notice || "Confirma los ingredientes con el personal antes de ordenar.";
+    safetyNotice.classList.remove("hidden");
     resultsTitle.textContent = data.recommendations.length ? "Recomendaciones para ti" : "Sin coincidencias seguras";
     if (data.message) {
       resultMessage.textContent = data.message;
@@ -172,4 +177,3 @@ if (SpeechRecognition) {
 }
 
 loadHealth();
-
